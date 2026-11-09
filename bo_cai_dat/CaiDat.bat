@@ -16,11 +16,21 @@ if not exist "%SRC%" (
 
 :choword
 tasklist /FI "IMAGENAME eq WINWORD.EXE" 2>nul | find /I "WINWORD.EXE" >nul
-if not errorlevel 1 (
-  echo [!] Word dang mo. Hay LUU va DONG het cua so Word, roi bam phim bat ky de tiep tuc...
+if errorlevel 1 goto hetword
+rem Word con chay nhung khong co cua so nao = Word chay an (thuong do phan mem khac mo roi bo do).
+powershell -NoProfile -Command "if (@(Get-Process WINWORD -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 }).Count -eq 0) { exit 3 }" >nul 2>&1
+if errorlevel 3 if not errorlevel 4 (
+  echo [!] Khong thay cua so Word nao nhung Word van dang CHAY AN.
+  echo     Bam phim bat ky de dong Word chay an va cai tiep, hoac dong cua so nay de huy...
   pause >nul
+  taskkill /F /IM WINWORD.EXE >nul 2>&1
+  timeout /t 2 /nobreak >nul
   goto choword
 )
+echo [!] Word dang mo. Hay LUU va DONG het cua so Word, roi bam phim bat ky de tiep tuc...
+pause >nul
+goto choword
+:hetword
 
 if not exist "%TGT%" mkdir "%TGT%" 2>nul
 if exist "%TGT%\ChuanHoa_VanBanDang.dotm" (

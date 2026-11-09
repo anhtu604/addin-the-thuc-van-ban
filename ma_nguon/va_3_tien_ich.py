@@ -405,6 +405,7 @@ End If
 Next p
 ElseIf nCells = 1 Then
 leftW = tbl.Cell(1, 1).Range.Paragraphs(1).LeftIndent
+If tbl.Cell(1, 1).Range.Paragraphs.Count >= 2 Then leftW = tbl.Cell(1, 1).Range.Paragraphs(2).LeftIndent - MillimetersToPoints(3)
 For Each p In tbl.Cell(1, 1).Range.Paragraphs
 t = CleanParaText(p.Range.Text)
 If Len(t) > 0 Then
@@ -447,7 +448,7 @@ With p.Format
 .LineSpacingRule = wdLineSpaceSingle
 .DisableLineHeightGrid = True
 If i = 1 Then
-.Alignment = wdAlignParagraphCenter
+.Alignment = wdAlignParagraphLeft
 .LeftIndent = leftW
 .FirstLineIndent = 0
 Else
@@ -458,6 +459,23 @@ End If
 End With
 If i = 1 Then p.Range.Font.Italic = TT_B("KINH_GUI_ITALIC")
 Next p
+' ND 30: cac gach dau dong thang hang duoi dau hai cham cua "Kinh gui:".
+' Dat "Kinh gui:" ket thuc dung tai cot gach dau dong (leftW).
+Dim wKG As Single, r1 As Range, r2 As Range
+Set r1 = c.Range.Paragraphs(1).Range.Characters.First
+Set r2 = c.Range.Paragraphs(1).Range.Characters.Last
+r1.Collapse wdCollapseStart
+r2.Collapse wdCollapseStart
+wKG = r2.Information(wdHorizontalPositionRelativeToPage) - r1.Information(wdHorizontalPositionRelativeToPage)
+If wKG < 20 Or wKG > 200 Then wKG = Len(prefixT) * 6.2
+If leftW - wKG < 0 Then
+leftW = wKG
+For i = 2 To c.Range.Paragraphs.Count
+c.Range.Paragraphs(i).LeftIndent = leftW + MillimetersToPoints(3)
+c.Range.Paragraphs(i).FirstLineIndent = -MillimetersToPoints(3)
+Next i
+End If
+c.Range.Paragraphs(1).LeftIndent = leftW - wKG
 Call TT_Note("Kinh gui co tu 2 don vi tro len: de 'Kinh gui:' mot dong rieng, moi don vi xuong mot dong (ND 30).")
 End Sub
 """
@@ -557,5 +575,123 @@ End Function
 anchor4 = "Private Function IsFooterBreakerLine("
 assert s.count(anchor4) == 1
 s = s.replace(anchor4, NEW4.strip('\n') + "\n" + anchor4)
+
+# ---- Cap nhat (Windows): khong ket im lang khi Word con chay an ----
+# Ban cu: file .cmd cho den khi KHONG con WINWORD.EXE nao. Neu Word chay an
+# (khong cua so) thi cho mai, file khong duoc thay, mo lai Word van ban cu va
+# bam [Cap nhat] lai tai lai tu dau. Ban moi: script PowerShell cho dong Word,
+# neu chi con Word chay an thi hoi dong no; chep xong kiem tra SHA-256 va bao
+# "Da cai xong"; trong luc dang cho, bam [Cap nhat] bao "dang cho dong Word".
+rep("msg = CN_TaiVaCai(url, sha)\n", "msg = CN_TaiVaCai(url, sha, ver)\n")
+rep("Private Function CN_TaiVaCai(ByVal url As String, ByVal sha As String) As String\n",
+    "Private Function CN_TaiVaCai(ByVal url As String, ByVal sha As String, Optional ByVal ver As String = \"\") As String\n")
+rep("""Dim ans As VbMsgBoxResult
+ans = MsgBox("Co phien ban moi: " & ver""",
+"""If CN_DangChoCai() Then
+If hoiKhiKhongCo Then MsgBox "Ban " & ver & " da tai ve va dang CHO BAN DONG HET Word de cai (dang dung " & CN_PhienBan() & ")." & vbCrLf & vbCrLf & _
+"Hay luu va dong tat ca cua so Word. Khi cai xong se co thong bao 'Da cai xong', luc do mo lai Word.", vbInformation, "Cap nhat Add-in"
+Exit Sub
+End If
+Dim ans As VbMsgBoxResult
+ans = MsgBox("Co phien ban moi: " & ver""")
+
+OLD_WIN = r'''Dim tgtW As String
+tgtW = target
+If Len(Environ("APPDATA")) > 0 And LCase(Left(tgtW, Len(Environ("APPDATA")))) = LCase(Environ("APPDATA")) Then
+tgtW = "%APPDATA%" & Mid(tgtW, Len(Environ("APPDATA")) + 1)
+End If
+Dim cmdPath As String
+cmdPath = Environ("TEMP") & "\cn_capnhat_WORD.cmd"
+Dim f As Integer
+f = FreeFile
+Open cmdPath For Output As #f
+Print #f, "@echo off"
+Print #f, ":cho"
+Print #f, "tasklist /FI ""IMAGENAME eq WINWORD.EXE"" 2>nul | find /I ""WINWORD.EXE"" >nul"
+Print #f, "if not errorlevel 1 (timeout /t 2 /nobreak >nul & goto cho)"
+Print #f, "copy /Y ""%TEMP%\cn_capnhat_WORD.tmp"" """ & tgtW & """ >nul"
+Print #f, "powershell -NoProfile -ExecutionPolicy Bypass -Command ""Unblock-File -LiteralPath '" & tgtW & "'"" >nul 2>&1"
+Print #f, "del ""%TEMP%\cn_capnhat_WORD.tmp"" >nul 2>&1"
+Print #f, "(goto) 2>nul & del ""%~f0"""
+Close #f
+Shell "cmd.exe /c """ & cmdPath & """", vbHide
+CN_TaiVaCai = "Da tai ban moi. Hay DONG HET cua so Word: ban moi se tu cai dat, mo lai Word la dung duoc."
+Exit Function
+'''
+PS_LINES = r'''$ErrorActionPreference = 'SilentlyContinue'
+$tmp = Join-Path $env:TEMP 'cn_capnhat_WORD.tmp'
+@@TGT@@
+$sha = '@@SHA@@'
+$ver = '@@VER@@'
+Add-Type -AssemblyName System.Windows.Forms
+$nl = [Environment]::NewLine
+$tAn = $null
+$daHoi = $false
+while (@(Get-Process WINWORD).Count -gt 0) {
+if (@(Get-Process WINWORD | Where-Object { $_.MainWindowHandle -ne 0 }).Count -gt 0) { $tAn = $null }
+elseif ($tAn -eq $null) { $tAn = Get-Date }
+elseif ((-not $daHoi) -and (((Get-Date) - $tAn).TotalSeconds -ge 15)) {
+$daHoi = $true
+$m = 'Cac cua so Word da dong nhung Word van con CHAY AN, nen chua cai duoc ban ' + $ver + ' cua Add-in The thuc.' + $nl + $nl + 'Dong Word dang chay an de cai ngay?' + $nl + '(Chon No neu ban dang tron thu/in an tu phan mem khac.)'
+if ([System.Windows.Forms.MessageBox]::Show($m, 'Cap nhat Add-in', 'YesNo', 'Question') -eq 'Yes') { Get-Process WINWORD | Stop-Process -Force; Start-Sleep -Seconds 2 }
+}
+Start-Sleep -Seconds 2
+}
+if (Test-Path -LiteralPath $tmp) {
+$ok = $false
+for ($i = 0; ($i -lt 10) -and (-not $ok); $i++) {
+Copy-Item -LiteralPath $tmp -Destination $tgt -Force
+if ((Get-FileHash -LiteralPath $tgt -Algorithm SHA256).Hash.ToLower() -eq $sha) { $ok = $true } else { Start-Sleep -Seconds 2 }
+}
+if ($ok) {
+Unblock-File -LiteralPath $tgt
+Remove-Item -LiteralPath $tmp -Force
+[void][System.Windows.Forms.MessageBox]::Show('Da cai xong Add-in The thuc ban ' + $ver + '.' + $nl + 'Mo lai Word de dung ban moi.', 'Cap nhat Add-in', 'OK', 'Information')
+} else {
+[void][System.Windows.Forms.MessageBox]::Show('Chua thay duoc file Add-in (file dang bi khoa). Hay dong het Word roi bam [Cap nhat] lai, hoac cai bang bo cai dat.', 'Cap nhat Add-in', 'OK', 'Warning')
+}
+}
+Remove-Item -LiteralPath $PSCommandPath -Force'''
+def vba_print(line):
+    q = line.replace('"', '""')
+    q = q.replace("@@SHA@@", '" & sha & "').replace("@@VER@@", '" & Replace(ver, "\'", "") & "')
+    if line == "@@TGT@@":
+        return "Print #f, tgtW"
+    return 'Print #f, "' + q + '"'
+NEW_WIN = r'''Dim tgtW As String
+If Len(Environ("APPDATA")) > 0 And LCase(Left(target, Len(Environ("APPDATA")))) = LCase(Environ("APPDATA")) Then
+tgtW = "$tgt = Join-Path $env:APPDATA '" & Replace(Mid(target, Len(Environ("APPDATA")) + 2), "'", "''") & "'"
+Else
+tgtW = "$tgt = '" & Replace(target, "'", "''") & "'"
+End If
+Dim psPath As String
+psPath = Environ("TEMP") & "\cn_capnhat_WORD.ps1"
+Dim f As Integer
+f = FreeFile
+Open psPath For Output As #f
+''' + "\n".join(vba_print(l) for l in PS_LINES.split("\n")) + r'''
+Close #f
+Shell "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & psPath & """", vbHide
+CN_TaiVaCai = "Da tai ban " & ver & ". Ban moi CHI co hieu luc sau khi ban DONG HET cua so Word." & vbCrLf & vbCrLf & _
+"Hay luu va dong tat ca cua so Word. Vai giay sau se co thong bao 'Da cai xong', luc do mo lai Word."
+Exit Function
+'''
+rep(OLD_WIN, NEW_WIN)
+rep("Private Function CN_TaiVaCai(", r'''Private Function CN_DangChoCai() As Boolean
+CN_DangChoCai = False
+#If Mac Then
+#Else
+On Error Resume Next
+Dim wmi As Object, ds As Object, p As Object
+Set wmi = GetObject("winmgmts:\\.\root\cimv2")
+Set ds = wmi.ExecQuery("Select ProcessId From Win32_Process Where Name='powershell.exe' And CommandLine Like '%cn_capnhat_WORD.ps1%'")
+For Each p In ds
+CN_DangChoCai = True
+Exit For
+Next p
+On Error GoTo 0
+#End If
+End Function
+Private Function CN_TaiVaCai(''')
 open(sys.argv[2], 'w', encoding='utf-8').write(s)
 print('tien ich ok')
