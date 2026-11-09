@@ -464,5 +464,98 @@ End Sub
 anchor3 = "Private Function IsFooterBreakerLine("
 assert s.count(anchor3) == 1
 s = s.replace(anchor3, NEW3.strip('\n') + "\n" + anchor3)
+# ---------- Kinh gui: nhan don vi cuoi khong co dau cau ----------
+# Dong don vi truoc ket thuc bang ";" hoac "," (danh sach con tiep) thi dong
+# ke tiep duoc nhan la don vi cuoi, du khong co gach dau dong / dau cau.
+# VD: "Trung tam ... thanh pho;" + "Benh vien ... Hai Duong".
+rep("""Dim scanCount As Integer: scanCount = 0
+""", """Dim scanCount As Integer: scanCount = 0
+Dim kgPrevSemi As Boolean: kgPrevSemi = False
+""")
+rep("""If IsKinhGuiStart(sRaw, sAsc) Then
+Set pStart = p
+Set pEnd = p
+foundStart = True
+""", """If IsKinhGuiStart(sRaw, sAsc) Then
+Set pStart = p
+Set pEnd = p
+foundStart = True
+kgPrevSemi = TT_KetThucChamPhay(sRaw)
+""")
+rep("""If IsKinhGuiRecipientItem(sRaw, sAsc) Then
+Set pEnd = p
+Else
+Exit For
+End If
+""", """If IsKinhGuiRecipientItem(sRaw, sAsc) Then
+Set pEnd = p
+kgPrevSemi = TT_KetThucChamPhay(sRaw)
+ElseIf kgPrevSemi And TT_LaDonViCuoi(sRaw, sAsc) Then
+Set pEnd = p
+Exit For
+Else
+Exit For
+End If
+""")
+rep("""Dim lastPInTbl As Paragraph
+Set lastPInTbl = tbl.Range.Paragraphs(tbl.Range.Paragraphs.Count)
+""", """Dim lastPInTbl As Paragraph
+Set lastPInTbl = tbl.Range.Paragraphs(tbl.Range.Paragraphs.Count)
+Dim kgAbsSemi As Boolean
+kgAbsSemi = TT_KetThucChamPhay(TT_DongCuoiCo(tbl.Range))
+""")
+rep("""If IsKinhGuiRecipientItem(sAfterRaw, sAfterAsc) Then
+If pAbsorbStart Is Nothing Then Set pAbsorbStart = pAfterTbl
+Set pAbsorbEnd = pAfterTbl
+Else
+Exit Do
+End If
+""", """If IsKinhGuiRecipientItem(sAfterRaw, sAfterAsc) Then
+If pAbsorbStart Is Nothing Then Set pAbsorbStart = pAfterTbl
+Set pAbsorbEnd = pAfterTbl
+kgAbsSemi = TT_KetThucChamPhay(sAfterRaw)
+ElseIf kgAbsSemi And TT_LaDonViCuoi(sAfterRaw, sAfterAsc) Then
+If pAbsorbStart Is Nothing Then Set pAbsorbStart = pAfterTbl
+Set pAbsorbEnd = pAfterTbl
+Exit Do
+Else
+Exit Do
+End If
+""")
+NEW4 = """
+Private Function TT_KetThucChamPhay(ByVal s As String) As Boolean
+Dim t As String
+t = Trim(Replace(CleanParaText(s), ChrW(160), " "))
+TT_KetThucChamPhay = (Right(t, 1) = ";" Or Right(t, 1) = ",")
+End Function
+Private Function TT_DongCuoiCo(ByVal rng As Range) As String
+Dim p As Paragraph, t As String
+TT_DongCuoiCo = ""
+For Each p In rng.Paragraphs
+t = CleanParaText(p.Range.Text)
+If Len(Trim(t)) > 0 Then TT_DongCuoiCo = t
+Next p
+End Function
+Private Function TT_LaDonViCuoi(ByVal sRaw As String, ByVal sAsc As String) As Boolean
+Dim t As String
+TT_LaDonViCuoi = False
+t = Trim(CleanParaText(sRaw))
+If Len(t) = 0 Or Len(t) > 150 Then Exit Function
+If Right(t, 1) = ":" Then Exit Function
+Dim a As String
+a = Trim(sAsc)
+If a Like "DE *" Or a Like "NHAM *" Or a Like "THUC HIEN*" Or a Like "CAN CU*" Or a Like "THEO *" Or _
+a Like "TRA LOI*" Or a Like "PHUC DAP*" Or a Like "HIEN NAY*" Or a Like "TRONG *" Or a Like "NGAY *" Or _
+a Like "VAO *" Or a Like "SAU *" Or a Like "TIEP THEO*" Or a Like "QUA *" Or a Like "VE VIEC*" Or _
+a Like "KINH DE NGHI*" Or a Like "XIN *" Or a Like "TRAN TRONG*" Or a Like "DUOC *" Or a Like "TU *" Then Exit Function
+If IsSeparatorLine(t) Or IsKinhGuiStart(t, sAsc) Or IsPartyDocTitle(sAsc) Then Exit Function
+If IsStrictBodyOrHeadingStart(t, sAsc) Or IsBodyStart(t, sAsc) Then Exit Function
+If sAsc Like "NOI NHAN*" Or IsSignatureRoleOrAuth(sAsc) Then Exit Function
+TT_LaDonViCuoi = True
+End Function
+"""
+anchor4 = "Private Function IsFooterBreakerLine("
+assert s.count(anchor4) == 1
+s = s.replace(anchor4, NEW4.strip('\n') + "\n" + anchor4)
 open(sys.argv[2], 'w', encoding='utf-8').write(s)
 print('tien ich ok')

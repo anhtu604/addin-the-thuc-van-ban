@@ -1609,6 +1609,36 @@ If i = 1 Then p.Range.Font.Italic = TT_B("KINH_GUI_ITALIC")
 Next p
 Call TT_Note("Kinh gui co tu 2 don vi tro len: de 'Kinh gui:' mot dong rieng, moi don vi xuong mot dong (ND 30).")
 End Sub
+Private Function TT_KetThucChamPhay(ByVal s As String) As Boolean
+Dim t As String
+t = Trim(Replace(CleanParaText(s), ChrW(160), " "))
+TT_KetThucChamPhay = (Right(t, 1) = ";" Or Right(t, 1) = ",")
+End Function
+Private Function TT_DongCuoiCo(ByVal rng As Range) As String
+Dim p As Paragraph, t As String
+TT_DongCuoiCo = ""
+For Each p In rng.Paragraphs
+t = CleanParaText(p.Range.Text)
+If Len(Trim(t)) > 0 Then TT_DongCuoiCo = t
+Next p
+End Function
+Private Function TT_LaDonViCuoi(ByVal sRaw As String, ByVal sAsc As String) As Boolean
+Dim t As String
+TT_LaDonViCuoi = False
+t = Trim(CleanParaText(sRaw))
+If Len(t) = 0 Or Len(t) > 150 Then Exit Function
+If Right(t, 1) = ":" Then Exit Function
+Dim a As String
+a = Trim(sAsc)
+If a Like "DE *" Or a Like "NHAM *" Or a Like "THUC HIEN*" Or a Like "CAN CU*" Or a Like "THEO *" Or _
+a Like "TRA LOI*" Or a Like "PHUC DAP*" Or a Like "HIEN NAY*" Or a Like "TRONG *" Or a Like "NGAY *" Or _
+a Like "VAO *" Or a Like "SAU *" Or a Like "TIEP THEO*" Or a Like "QUA *" Or a Like "VE VIEC*" Or _
+a Like "KINH DE NGHI*" Or a Like "XIN *" Or a Like "TRAN TRONG*" Or a Like "DUOC *" Or a Like "TU *" Then Exit Function
+If IsSeparatorLine(t) Or IsKinhGuiStart(t, sAsc) Or IsPartyDocTitle(sAsc) Then Exit Function
+If IsStrictBodyOrHeadingStart(t, sAsc) Or IsBodyStart(t, sAsc) Then Exit Function
+If sAsc Like "NOI NHAN*" Or IsSignatureRoleOrAuth(sAsc) Then Exit Function
+TT_LaDonViCuoi = True
+End Function
 Private Function IsFooterBreakerLine(ByVal sRaw As String, ByVal sAsc As String) As Boolean
 IsFooterBreakerLine = False
 Dim t As String: t = Trim(sAsc)
@@ -4446,6 +4476,8 @@ Dim pAbsorbStart As Paragraph: Set pAbsorbStart = Nothing
 Dim pAbsorbEnd As Paragraph: Set pAbsorbEnd = Nothing
 Dim lastPInTbl As Paragraph
 Set lastPInTbl = tbl.Range.Paragraphs(tbl.Range.Paragraphs.Count)
+Dim kgAbsSemi As Boolean
+kgAbsSemi = TT_KetThucChamPhay(TT_DongCuoiCo(tbl.Range))
 Set pAfterTbl = lastPInTbl.Next
 Do While Not pAfterTbl Is Nothing
 If pAfterTbl.Range.Information(wdWithInTable) Then Exit Do
@@ -4457,6 +4489,11 @@ sAfterAsc = Trim(ToAscii(sAfterRaw))
 If IsKinhGuiRecipientItem(sAfterRaw, sAfterAsc) Then
 If pAbsorbStart Is Nothing Then Set pAbsorbStart = pAfterTbl
 Set pAbsorbEnd = pAfterTbl
+kgAbsSemi = TT_KetThucChamPhay(sAfterRaw)
+ElseIf kgAbsSemi And TT_LaDonViCuoi(sAfterRaw, sAfterAsc) Then
+If pAbsorbStart Is Nothing Then Set pAbsorbStart = pAfterTbl
+Set pAbsorbEnd = pAfterTbl
+Exit Do
 Else
 Exit Do
 End If
@@ -4515,6 +4552,7 @@ Dim pStart As Paragraph: Set pStart = Nothing
 Dim pEnd As Paragraph: Set pEnd = Nothing
 Dim foundStart As Boolean: foundStart = False
 Dim scanCount As Integer: scanCount = 0
+Dim kgPrevSemi As Boolean: kgPrevSemi = False
 For Each p In doc.Paragraphs
 If Not p.Range.Information(wdWithInTable) Then
 Dim sRaw As String
@@ -4528,12 +4566,17 @@ If IsKinhGuiStart(sRaw, sAsc) Then
 Set pStart = p
 Set pEnd = p
 foundStart = True
+kgPrevSemi = TT_KetThucChamPhay(sRaw)
 ElseIf scanCount > 25 Then
 Exit Sub
 End If
 Else
 If IsKinhGuiRecipientItem(sRaw, sAsc) Then
 Set pEnd = p
+kgPrevSemi = TT_KetThucChamPhay(sRaw)
+ElseIf kgPrevSemi And TT_LaDonViCuoi(sRaw, sAsc) Then
+Set pEnd = p
+Exit For
 Else
 Exit For
 End If

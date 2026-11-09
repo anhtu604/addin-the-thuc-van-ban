@@ -16,6 +16,8 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) { throw "Khong thay
 if (Get-Process WINWORD -ErrorAction SilentlyContinue) { throw "Hay dong het cua so Word truoc khi dung ban." }
 
 New-Item -ItemType Directory -Force $tmp | Out-Null
+# Xoa ket qua cu: neu buoc nap ma that bai, khong de file cu bi coi la ban moi.
+Remove-Item "$tmp\a.bas","$tmp\b.bas","$tmp\c.bas","$tmp\tam.dotm","$tmp\final.dotm" -Force -ErrorAction SilentlyContinue
 function Py { param([string[]]$a) & python @a; if ($LASTEXITCODE -ne 0) { throw "python $($a -join ' ') loi" } }
 
 Push-Location $ng
