@@ -35,9 +35,9 @@ if not exist "%TGT%\ChuanHoa_VanBan_Rieng.dotm" (
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -LiteralPath '%TGT%\ChuanHoa_VanBan_Rieng.dotm'" >nul 2>&1
 
 for %%V in (15.0 16.0) do (
-  reg add "HKCU\Software\Microsoft\Office\%%V\Word\Security\Trusted Locations\VPDU_WordStartup" /v "Path" /t REG_SZ /d "%TGT%\" /f >nul 2>&1
+  reg add "HKCU\Software\Microsoft\Office\%%V\Word\Security\Trusted Locations\VPDU_WordStartup" /v "Path" /t REG_SZ /d "%TGT%" /f >nul 2>&1 <nul
 )
-reg add "HKCU\Software\VB and VBA Program Settings\OfficePartySuite\TheThuc" /v "DonVi" /t REG_SZ /d "AUTO" /f >nul 2>&1
+reg add "HKCU\Software\VB and VBA Program Settings\OfficePartySuite\TheThuc" /v "DonVi" /t REG_SZ /d "AUTO" /f >nul 2>&1 <nul
 
 echo [+] Da cai ChuanHoa_VanBan_Rieng.dotm (khoi: Tu dong nhan dien).
 echo.
