@@ -285,5 +285,57 @@ End Sub
 anchor = "Private Function IsFooterBreakerLine("
 assert s.count(anchor) == 1
 s = s.replace(anchor, NEW.strip('\n') + "\n" + anchor)
+# ---------- V/v (trich yeu cong van): co 12, nho hon dong So (13) theo mau ND 30 ----------
+rep('Case "CV_SUMMARY_SIZE": TT_RawN = 13', 'Case "CV_SUMMARY_SIZE": TT_RawN = 12', 4)
+
+# ---------- Kinh gui: tu 2 don vi ttro len, moi don vi mot dong ----------
+rep("""Call SafeReplaceSoftBreaksInRange(cKG.Range)
+On Error Resume Next
+cKG.Range.Font.Bold = False
+cKG.Range.Font.Italic = False
+""", """Call SafeReplaceSoftBreaksInRange(cKG.Range)
+Dim kgTxtCu As String, kgTxtMoi As String, pKgT As Paragraph
+kgTxtCu = ""
+For Each pKgT In cKG.Range.Paragraphs
+If Len(CleanParaText(pKgT.Range.Text)) > 0 Then
+If Len(kgTxtCu) > 0 Then kgTxtCu = kgTxtCu & vbCr
+kgTxtCu = kgTxtCu & CleanParaText(pKgT.Range.Text)
+End If
+Next pKgT
+kgTxtMoi = TT_TachDonViNhan(kgTxtCu)
+If kgTxtMoi <> kgTxtCu Then cKG.Range.Text = kgTxtMoi
+On Error Resume Next
+cKG.Range.Font.Bold = False
+cKG.Range.Font.Italic = False
+""")
+NEW2 = """
+Private Function TT_TachDonViNhan(ByVal txt As String) As String
+Dim ln() As String, i As Long, j As Long, outT As String, cur As String, piece As String, ch As String
+ln = Split(txt, vbCr)
+outT = ""
+For i = 0 To UBound(ln)
+cur = Trim(Replace(ln(i), ChrW(160), " "))
+If Len(cur) > 0 Then
+piece = ""
+For j = 1 To Len(cur)
+ch = Mid(cur, j, 1)
+piece = piece & ch
+If ch = ";" Then
+If Len(Trim(Mid(cur, j + 1))) > 0 Then
+outT = outT & Trim(piece) & vbCr
+piece = ""
+End If
+End If
+Next j
+If Len(Trim(piece)) > 0 Then outT = outT & Trim(piece) & vbCr
+End If
+Next i
+If Len(outT) > 0 Then outT = Left(outT, Len(outT) - 1)
+TT_TachDonViNhan = outT
+End Function
+"""
+anchor2 = "Private Function IsFooterBreakerLine("
+assert s.count(anchor2) == 1
+s = s.replace(anchor2, NEW2.strip('\n') + "\n" + anchor2)
 open(sys.argv[2], 'w', encoding='utf-8').write(s)
 print('tien ich ok')

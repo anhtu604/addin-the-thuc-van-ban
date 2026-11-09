@@ -92,7 +92,7 @@ Case "HDR_RIGHT_MM": TT_RawN = 101
 Case "HDR_LEFT_MIN_MM": TT_RawN = 52
 Case "DOC_NUMBER_SIZE": TT_RawN = 13
 Case "DATE_SIZE": TT_RawN = 14
-Case "CV_SUMMARY_SIZE": TT_RawN = 13
+Case "CV_SUMMARY_SIZE": TT_RawN = 12
 Case "TITLE_SIZE": TT_RawN = 14
 Case "SUMMARY_SIZE": TT_RawN = 14
 Case "BODY_SIZE": TT_RawN = 14
@@ -119,7 +119,7 @@ Case "HDR_RIGHT_MM": TT_RawN = 101
 Case "HDR_LEFT_MIN_MM": TT_RawN = 52
 Case "DOC_NUMBER_SIZE": TT_RawN = 13
 Case "DATE_SIZE": TT_RawN = 14
-Case "CV_SUMMARY_SIZE": TT_RawN = 13
+Case "CV_SUMMARY_SIZE": TT_RawN = 12
 Case "TITLE_SIZE": TT_RawN = 14
 Case "SUMMARY_SIZE": TT_RawN = 14
 Case "BODY_SIZE": TT_RawN = 14
@@ -146,7 +146,7 @@ Case "HDR_RIGHT_MM": TT_RawN = 101
 Case "HDR_LEFT_MIN_MM": TT_RawN = 52
 Case "DOC_NUMBER_SIZE": TT_RawN = 13
 Case "DATE_SIZE": TT_RawN = 14
-Case "CV_SUMMARY_SIZE": TT_RawN = 13
+Case "CV_SUMMARY_SIZE": TT_RawN = 12
 Case "TITLE_SIZE": TT_RawN = 14
 Case "SUMMARY_SIZE": TT_RawN = 14
 Case "BODY_SIZE": TT_RawN = 14
@@ -173,7 +173,7 @@ Case "HDR_RIGHT_MM": TT_RawN = 101
 Case "HDR_LEFT_MIN_MM": TT_RawN = 52
 Case "DOC_NUMBER_SIZE": TT_RawN = 13
 Case "DATE_SIZE": TT_RawN = 14
-Case "CV_SUMMARY_SIZE": TT_RawN = 13
+Case "CV_SUMMARY_SIZE": TT_RawN = 12
 Case "TITLE_SIZE": TT_RawN = 14
 Case "SUMMARY_SIZE": TT_RawN = 14
 Case "BODY_SIZE": TT_RawN = 14
@@ -1478,6 +1478,30 @@ Next p
 doc.Repaginate
 If nLines <= 2 Then Call TT_Note("Trang cuoi chi co " & nLines & " dong noi dung + chu ky; khong the thu gon ma van dung the thuc. Can nhac rut gon noi dung.")
 End Sub
+Private Function TT_TachDonViNhan(ByVal txt As String) As String
+Dim ln() As String, i As Long, j As Long, outT As String, cur As String, piece As String, ch As String
+ln = Split(txt, vbCr)
+outT = ""
+For i = 0 To UBound(ln)
+cur = Trim(Replace(ln(i), ChrW(160), " "))
+If Len(cur) > 0 Then
+piece = ""
+For j = 1 To Len(cur)
+ch = Mid(cur, j, 1)
+piece = piece & ch
+If ch = ";" Then
+If Len(Trim(Mid(cur, j + 1))) > 0 Then
+outT = outT & Trim(piece) & vbCr
+piece = ""
+End If
+End If
+Next j
+If Len(Trim(piece)) > 0 Then outT = outT & Trim(piece) & vbCr
+End If
+Next i
+If Len(outT) > 0 Then outT = Left(outT, Len(outT) - 1)
+TT_TachDonViNhan = outT
+End Function
 Private Function IsFooterBreakerLine(ByVal sRaw As String, ByVal sAsc As String) As Boolean
 IsFooterBreakerLine = False
 Dim t As String: t = Trim(sAsc)
@@ -2965,6 +2989,16 @@ cKG.Shading.BackgroundPatternColor = wdColorAutomatic
 cKG.Shading.Texture = wdTextureNone
 cKG.VerticalAlignment = wdCellAlignVerticalTop
 Call SafeReplaceSoftBreaksInRange(cKG.Range)
+Dim kgTxtCu As String, kgTxtMoi As String, pKgT As Paragraph
+kgTxtCu = ""
+For Each pKgT In cKG.Range.Paragraphs
+If Len(CleanParaText(pKgT.Range.Text)) > 0 Then
+If Len(kgTxtCu) > 0 Then kgTxtCu = kgTxtCu & vbCr
+kgTxtCu = kgTxtCu & CleanParaText(pKgT.Range.Text)
+End If
+Next pKgT
+kgTxtMoi = TT_TachDonViNhan(kgTxtCu)
+If kgTxtMoi <> kgTxtCu Then cKG.Range.Text = kgTxtMoi
 On Error Resume Next
 cKG.Range.Font.Bold = False
 cKG.Range.Font.Italic = False
@@ -5868,7 +5902,7 @@ Public Sub AutoExec()
 Call CN_HenKiemTraKhiMo
 End Sub
 Public Function CN_PhienBan() As String
-CN_PhienBan = "2026.11.09.4"
+CN_PhienBan = "2026.11.09.5"
 End Function
 Private Function CN_ManifestUrl() As String
 CN_ManifestUrl = "https://raw.githubusercontent.com/anhtu604/addin-the-thuc-van-ban/main/version.json"
