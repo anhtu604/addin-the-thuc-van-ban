@@ -1,6 +1,6 @@
 {
-    "version":  "2026.11.09.3",
-    "word_url":  "https://raw.githubusercontent.com/anhtu604/addin-the-thuc-van-ban/main/dist/ChuanHoa_VanBan_Rieng_2026.11.09.3.dotm",
-    "word_sha256":  "4b882e5df04771a83412b03cbcf46b9a47f0726c5e6d4053f91a7b1fdb89a73f",
-    "notes_ascii":  "Ban dau tien do Vuong Dinh Anh Tu duy tri: sua loi Quyet dinh, ho tro VBQPPL, giu chu ky cung trang, ep trang, sua loi go, mot lan Ctrl+Z hoan tac."
+    "version":  "2026.11.09.4",
+    "word_url":  "https://raw.githubusercontent.com/anhtu604/addin-the-thuc-van-ban/main/dist/ChuanHoa_VanBan_Rieng_2026.11.09.4.dotm",
+    "word_sha256":  "e7c7f3756807b4efd5c79318b5d2119d9b54b93fc09bd6cde5e8cb980295c85a",
+    "notes_ascii":  "Sua loi Word bi treo/sap khi chuan hoa van ban mo tu file; duong ke duoi trich yeu khong con de len chu."
 }

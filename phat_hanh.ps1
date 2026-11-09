@@ -30,7 +30,9 @@ $manifest = [ordered]@{
 $json = $manifest | ConvertTo-Json
 [IO.File]::WriteAllText((Join-Path $root 'version.json'), $json + "`n", (New-Object Text.UTF8Encoding $false))
 
-git -C $root add -A
-git -C $root commit -m "Phat hanh $Version"
-git -C $root push origin main
+$ErrorActionPreference = 'Continue'
+git -C $root add -A 2>$null
+git -C $root commit -q -m "Phat hanh $Version"
+git -C $root push -q origin main 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "Push that bai - kiem tra mang/dang nhap GitHub" }
 "Da phat hanh $Version (sha256 $sha)"

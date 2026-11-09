@@ -1225,24 +1225,35 @@ lineW = textW * 0.4
 If lineW < MillimetersToPoints(20) Then lineW = MillimetersToPoints(20)
 Dim lPos As Single
 lPos = (areaW - lineW) / 2
-Dim sz As Single
-sz = p.Range.Font.Size
-If sz <= 0 Or sz > 40 Then sz = 14
-Dim tPos As Single
-tPos = nL * sz * 1.17 + 3
-If p.Format.SpaceAfter < 12 Then p.Format.SpaceAfter = 12
-Dim newL As Shape
-Set newL = doc.Shapes.AddLine(lPos, tPos, lPos + lineW, tPos, p.Range)
-With newL
-.Name = "LineTrichYeu"
-.RelativeHorizontalPosition = wdRelativeHorizontalPositionColumn
-.RelativeVerticalPosition = wdRelativeVerticalPositionParagraph
-.Left = lPos
-.Top = tPos
-.Line.Weight = 0.75
-.Line.ForeColor.RGB = RGB(0, 0, 0)
-.Line.DashStyle = 1
-.WrapFormat.Type = 3
+Dim pR As Paragraph
+Set pR = p.Next
+Dim reuse As Boolean: reuse = False
+If Not pR Is Nothing Then
+If Not pR.Range.Information(wdWithInTable) And Len(CleanParaText(pR.Range.Text)) = 0 Then reuse = True
+End If
+If Not reuse Then
+p.Range.InsertParagraphAfter
+Set pR = p.Next
+End If
+p.Format.SpaceAfter = 8
+p.Format.KeepWithNext = True
+With pR.Format
+.Alignment = wdAlignParagraphCenter
+.LeftIndent = lPos
+.RightIndent = lPos
+.FirstLineIndent = 0
+.SpaceBefore = 0
+.SpaceAfter = 10
+.LineSpacingRule = wdLineSpaceExactly
+.LineSpacing = 2
+.KeepWithNext = False
+End With
+pR.Range.Font.Size = 2
+pR.Range.Font.Bold = False
+With pR.Borders(wdBorderTop)
+.LineStyle = wdLineStyleSingle
+.LineWidth = wdLineWidth075pt
+.Color = wdColorBlack
 End With
 On Error GoTo 0
 End Sub
@@ -1253,46 +1264,86 @@ Private Function TT_NotesText() As String
 TT_NotesText = ""
 If Len(mTTNotes) > 0 Then TT_NotesText = vbCrLf & vbCrLf & "Da tu dong xu ly:" & mTTNotes
 End Function
-Private Function TT_WildReplace(ByVal rng As Range, ByVal f As String, ByVal r As String) As Boolean
+Private Function TT_IsLetterCode(ByVal c As Long) As Boolean
+TT_IsLetterCode = (c >= 65 And c <= 90) Or (c >= 97 And c <= 122) Or (c >= 192 And c <= 7929 And c <> 215 And c <> 247)
+End Function
+Private Function TT_SuaCachTrongDoan(ByVal doc As Document, ByVal p As Paragraph) As Boolean
 On Error Resume Next
-TT_WildReplace = False
-With rng.Find
-.ClearFormatting
-.Replacement.ClearFormatting
-.Text = f
-.Replacement.Text = r
-.Forward = True
-.Wrap = wdFindStop
-.Format = False
-.MatchWildcards = True
-TT_WildReplace = .Execute(Replace:=wdReplaceAll)
-End With
+TT_SuaCachTrongDoan = False
+If p.Range.Fields.Count > 0 Or p.Range.InlineShapes.Count > 0 Then Exit Function
+Dim t As String, n As Long, i As Long, j As Long, base As Long, c As String, nx As String, lastIdx As Long
+t = p.Range.Text
+If Len(t) <> p.Range.End - p.Range.Start Then Exit Function
+If p.Range.ShapeRange.Count > 0 Then Exit Function
+n = Len(t)
+Do While n > 0
+c = Mid(t, n, 1)
+If c = vbCr Or c = Chr(7) Or c = Chr(11) Then n = n - 1 Else Exit Do
+Loop
+If n < 2 Then Exit Function
+lastIdx = n
+base = p.Range.Start
+For i = n To 1 Step -1
+c = Mid(t, i, 1)
+If c = " " Then
+j = i
+Do While j < n And Mid(t, j + 1, 1) = " "
+j = j + 1
+Loop
+nx = ""
+If j < n Then nx = Mid(t, j + 1, 1)
+Dim doDel As Boolean: doDel = False
+If Len(nx) > 0 And InStr(1, ",;:!?)", nx) > 0 And i > 1 Then doDel = True
+If nx = "." And j + 1 = lastIdx And i > 1 Then
+If Mid(t, i - 1, 1) <> "." And Mid(t, i - 1, 1) <> " " Then doDel = True
+End If
+Dim k As Long: k = i
+Do While k > 1 And Mid(t, k - 1, 1) = " "
+k = k - 1
+Loop
+If k > 1 And Mid(t, k - 1, 1) = "(" Then doDel = True
+If doDel Then
+If doc.Range(base + i - 1, base + i).Text = " " Then
+doc.Range(base + i - 1, base + i).Delete
+TT_SuaCachTrongDoan = True
+End If
+End If
+ElseIf (c = "," Or c = ";") And i < n Then
+Dim cc As Long: cc = AscW(Mid(t, i + 1, 1))
+If cc < 0 Then cc = cc + 65536
+If TT_IsLetterCode(cc) Then
+If doc.Range(base + i - 1, base + i).Text = c Then
+doc.Range(base + i, base + i).InsertAfter " "
+TT_SuaCachTrongDoan = True
+End If
+End If
+End If
+Next i
 End Function
 Private Sub TT_SuaLoiGo(ByVal doc As Document)
 On Error Resume Next
-Dim hit As Boolean
-Dim letters As String
-letters = "A-Za-z" & ChrW(192) & "-" & ChrW(7929)
-If TT_WildReplace(doc.Content, " {1,}([,;:\!\?\)])", "\1") Then hit = True
-If TT_WildReplace(doc.Content, "\( {1,}", "(") Then hit = True
-If TT_WildReplace(doc.Content, "([! .]) {1,}.^13", "\1.^p") Then hit = True
-If TT_WildReplace(doc.Content, "([,;])([" & letters & "])", "\1 \2") Then hit = True
+Dim p As Paragraph, hit As Boolean, idx As Long, total As Long
+total = doc.Paragraphs.Count
+If total > 3000 Then Exit Sub
+Set p = doc.Paragraphs(1)
+For idx = 1 To total
+If p Is Nothing Then Exit For
+If TT_SuaCachTrongDoan(doc, p) Then hit = True
+Set p = p.Next
+Next idx
 If hit Then Call TT_Note("Sua dau cach quanh dau cau (bo cach truoc , ; : ! ? ) va dau cham cuoi doan, bo cach sau dau mo ngoac, them cach sau , ;).")
 End Sub
 Private Sub TT_ChuanUY(ByVal rng As Range)
 On Error Resume Next
-Dim r As Range
-Set r = rng.Duplicate
-With r.Find
-.ClearFormatting
-.Replacement.ClearFormatting
-.Text = "U" & ChrW(7926)
-.Replacement.Text = ChrW(7910) & "Y"
-.MatchCase = True
-.MatchWildcards = False
-.Wrap = wdFindStop
-.Execute Replace:=wdReplaceAll
-End With
+Dim t As String, pos As Long, base As Long
+t = rng.Text
+base = rng.Start
+pos = InStrRev(t, "U" & ChrW(7926))
+Do While pos > 0
+rng.Document.Range(base + pos - 1, base + pos + 1).Text = ChrW(7910) & "Y"
+If pos <= 1 Then Exit Do
+pos = InStrRev(t, "U" & ChrW(7926), pos - 1)
+Loop
 End Sub
 Private Function TT_FindFooterTable(ByVal doc As Document) As Table
 On Error Resume Next
@@ -3635,7 +3686,7 @@ Next tblAll
 Dim pGap As Paragraph
 For Each pGap In doc.Paragraphs
 If Not pGap.Range.Information(wdWithInTable) Then
-If Len(CleanParaText(pGap.Range.Text)) = 0 Then
+If Len(CleanParaText(pGap.Range.Text)) = 0 And pGap.Borders(wdBorderTop).LineStyle = wdLineStyleNone Then
 pGap.Range.Font.Name = "Times New Roman"
 pGap.Range.Font.Size = 12
 pGap.Format.SpaceBefore = 0
@@ -5817,7 +5868,7 @@ Public Sub AutoExec()
 Call CN_HenKiemTraKhiMo
 End Sub
 Public Function CN_PhienBan() As String
-CN_PhienBan = "2026.11.09.3"
+CN_PhienBan = "2026.11.09.4"
 End Function
 Private Function CN_ManifestUrl() As String
 CN_ManifestUrl = "https://raw.githubusercontent.com/anhtu604/addin-the-thuc-van-ban/main/version.json"

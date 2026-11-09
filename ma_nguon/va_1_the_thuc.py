@@ -183,24 +183,35 @@ lineW = textW * 0.4
 If lineW < MillimetersToPoints(20) Then lineW = MillimetersToPoints(20)
 Dim lPos As Single
 lPos = (areaW - lineW) / 2
-Dim sz As Single
-sz = p.Range.Font.Size
-If sz <= 0 Or sz > 40 Then sz = 14
-Dim tPos As Single
-tPos = nL * sz * 1.17 + 3
-If p.Format.SpaceAfter < 12 Then p.Format.SpaceAfter = 12
-Dim newL As Shape
-Set newL = doc.Shapes.AddLine(lPos, tPos, lPos + lineW, tPos, p.Range)
-With newL
-.Name = "LineTrichYeu"
-.RelativeHorizontalPosition = wdRelativeHorizontalPositionColumn
-.RelativeVerticalPosition = wdRelativeVerticalPositionParagraph
-.Left = lPos
-.Top = tPos
-.Line.Weight = 0.75
-.Line.ForeColor.RGB = RGB(0, 0, 0)
-.Line.DashStyle = 1
-.WrapFormat.Type = 3
+Dim pR As Paragraph
+Set pR = p.Next
+Dim reuse As Boolean: reuse = False
+If Not pR Is Nothing Then
+If Not pR.Range.Information(wdWithInTable) And Len(CleanParaText(pR.Range.Text)) = 0 Then reuse = True
+End If
+If Not reuse Then
+p.Range.InsertParagraphAfter
+Set pR = p.Next
+End If
+p.Format.SpaceAfter = 8
+p.Format.KeepWithNext = True
+With pR.Format
+.Alignment = wdAlignParagraphCenter
+.LeftIndent = lPos
+.RightIndent = lPos
+.FirstLineIndent = 0
+.SpaceBefore = 0
+.SpaceAfter = 10
+.LineSpacingRule = wdLineSpaceExactly
+.LineSpacing = 2
+.KeepWithNext = False
+End With
+pR.Range.Font.Size = 2
+pR.Range.Font.Bold = False
+With pR.Borders(wdBorderTop)
+.LineStyle = wdLineStyleSingle
+.LineWidth = wdLineWidth075pt
+.Color = wdColorBlack
 End With
 On Error GoTo 0
 End Sub
@@ -389,7 +400,7 @@ Next tblAll
 Dim pGap As Paragraph
 For Each pGap In doc.Paragraphs
 If Not pGap.Range.Information(wdWithInTable) Then
-If Len(CleanParaText(pGap.Range.Text)) = 0 Then
+If Len(CleanParaText(pGap.Range.Text)) = 0 And pGap.Borders(wdBorderTop).LineStyle = wdLineStyleNone Then
 pGap.Range.Font.Name = "Times New Roman"
 pGap.Range.Font.Size = 12
 pGap.Format.SpaceBefore = 0
