@@ -1,6 +1,6 @@
 {
-    "version":  "2026.11.09.5",
-    "word_url":  "https://raw.githubusercontent.com/anhtu604/addin-the-thuc-van-ban/main/dist/ChuanHoa_VanBan_Rieng_2026.11.09.5.dotm",
-    "word_sha256":  "e34f345d55d7eecf372be624035ee1b843085f4b24fac843f42d655cdc0d2aec",
-    "notes_ascii":  "V/v co 12 nho hon So; Kinh gui tu 2 don vi xuong dong"
+    "version":  "2026.11.09.6",
+    "word_url":  "https://raw.githubusercontent.com/anhtu604/addin-the-thuc-van-ban/main/dist/ChuanHoa_VanBan_Rieng_2026.11.09.6.dotm",
+    "word_sha256":  "ca923c6f5f971cf4f03dd39a7b8530d2f6b058998d2be404f0294e296c9121f1",
+    "notes_ascii":  "Kinh gui: gach dau dong thang duoi dau hai cham; cap nhat bao ro khi Word con chay an"
 }
