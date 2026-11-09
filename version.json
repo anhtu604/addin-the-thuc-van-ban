@@ -1,6 +1,6 @@
 {
-    "version":  "2026.11.09.4",
-    "word_url":  "https://raw.githubusercontent.com/anhtu604/addin-the-thuc-van-ban/main/dist/ChuanHoa_VanBan_Rieng_2026.11.09.4.dotm",
-    "word_sha256":  "e7c7f3756807b4efd5c79318b5d2119d9b54b93fc09bd6cde5e8cb980295c85a",
-    "notes_ascii":  "Sua loi Word bi treo/sap khi chuan hoa van ban mo tu file; duong ke duoi trich yeu khong con de len chu."
+    "version":  "2026.11.09.5",
+    "word_url":  "https://raw.githubusercontent.com/anhtu604/addin-the-thuc-van-ban/main/dist/ChuanHoa_VanBan_Rieng_2026.11.09.5.dotm",
+    "word_sha256":  "e34f345d55d7eecf372be624035ee1b843085f4b24fac843f42d655cdc0d2aec",
+    "notes_ascii":  "V/v co 12 nho hon So; Kinh gui tu 2 don vi xuong dong"
 }
