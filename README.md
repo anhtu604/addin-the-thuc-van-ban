@@ -3,7 +3,7 @@
 Chuẩn hóa thể thức văn bản theo **Nghị định 30/2020/NĐ-CP** (văn bản hành chính), thể thức **văn bản của Đảng**, khối Công an, Quân đội, MTTQ và **văn bản quy phạm pháp luật**.
 
 - Người duy trì: **Vương Đình Anh Tú**
-- Dựa trên add-in gốc của **Văn phòng Đảng ủy xã Thạnh Phú** (phiên bản 2026.11.07.5), phát hành lại với sự đồng ý của tác giả.
+-  (phiên bản 2026.11.07.5), phát hành lại với sự đồng ý của tác giả.
 
 ## Cài đặt (đồng nghiệp)
 
