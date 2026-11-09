@@ -1502,6 +1502,113 @@ Next i
 If Len(outT) > 0 Then outT = Left(outT, Len(outT) - 1)
 TT_TachDonViNhan = outT
 End Function
+Private Function TT_LaGachDau(ByVal ch As String) As Boolean
+TT_LaGachDau = False
+If Len(ch) = 0 Then Exit Function
+Select Case AscW(ch)
+Case 45, 43, 42, 183, 8210, 8211, 8212, 8226, 8259, 8722: TT_LaGachDau = True
+End Select
+End Function
+Private Function TT_KinhGuiDinhDang(ByVal items As String) As String
+Dim ln() As String, i As Long, t As String, cleaned As String, outT As String, n As Long
+ln = Split(items, vbCr)
+cleaned = ""
+For i = 0 To UBound(ln)
+t = Trim(Replace(ln(i), ChrW(160), " "))
+Do While Len(t) > 0
+If TT_LaGachDau(Left(t, 1)) Then t = Trim(Mid(t, 2)) Else Exit Do
+Loop
+Do While Len(t) > 0
+If InStr(".;, ", Right(t, 1)) > 0 Then t = Left(t, Len(t) - 1) Else Exit Do
+Loop
+If Len(t) > 0 Then
+If Len(cleaned) > 0 Then cleaned = cleaned & vbCr
+cleaned = cleaned & t
+End If
+Next i
+ln = Split(cleaned, vbCr)
+n = UBound(ln)
+outT = ""
+For i = 0 To n
+If i > 0 Then outT = outT & vbCr
+outT = outT & "- " & ln(i) & IIf(i = n, ".", ";")
+Next i
+TT_KinhGuiDinhDang = outT
+End Function
+Private Sub TT_KinhGuiNhieuDonVi(ByVal doc As Document, ByVal tbl As Table)
+On Error Resume Next
+Dim nCells As Long, leftW As Single, prefixT As String, rawItems As String
+Dim p As Paragraph, c As Cell, t As String, first As Boolean, i As Long
+nCells = tbl.Range.Cells.Count
+rawItems = ""
+first = True
+If nCells = 2 And tbl.Rows.Count = 1 Then
+leftW = tbl.Cell(1, 1).Width
+prefixT = KinhGuiPrefixFor(ToAscii(tbl.Cell(1, 1).Range.Text))
+For Each p In tbl.Cell(1, 2).Range.Paragraphs
+t = CleanParaText(p.Range.Text)
+If Len(t) > 0 Then
+If Len(rawItems) > 0 Then rawItems = rawItems & vbCr
+rawItems = rawItems & t
+End If
+Next p
+ElseIf nCells = 1 Then
+leftW = tbl.Cell(1, 1).Range.Paragraphs(1).LeftIndent
+For Each p In tbl.Cell(1, 1).Range.Paragraphs
+t = CleanParaText(p.Range.Text)
+If Len(t) > 0 Then
+If first Then
+prefixT = KinhGuiPrefixFor(ToAscii(t))
+first = False
+Else
+If Len(rawItems) > 0 Then rawItems = rawItems & vbCr
+rawItems = rawItems & t
+End If
+End If
+Next p
+Else
+Exit Sub
+End If
+If Len(rawItems) = 0 Then Exit Sub
+rawItems = TT_TachDonViNhan(rawItems)
+If UBound(Split(rawItems, vbCr)) < 1 Then Exit Sub
+If leftW < MillimetersToPoints(20) Then leftW = MillimetersToPoints(52)
+If nCells = 2 Then tbl.Cell(1, 1).Merge MergeTo:=tbl.Cell(1, 2)
+Set c = tbl.Cell(1, 1)
+c.Range.Text = prefixT & vbCr & TT_KinhGuiDinhDang(rawItems)
+c.Borders.Enable = False
+c.VerticalAlignment = wdCellAlignVerticalTop
+c.Range.Font.Name = "Times New Roman"
+c.Range.Font.Size = 14
+c.Range.Font.Bold = False
+c.Range.Font.Italic = False
+c.Range.Font.ColorIndex = wdBlack
+c.Range.Font.Underline = wdUnderlineNone
+i = 0
+For Each p In c.Range.Paragraphs
+i = i + 1
+With p.Format
+.RightIndent = 0
+.SpaceBefore = 3
+.SpaceAfter = 3
+.SpaceBeforeAuto = False
+.SpaceAfterAuto = False
+.LineSpacingRule = wdLineSpaceSingle
+.DisableLineHeightGrid = True
+If i = 1 Then
+.Alignment = wdAlignParagraphCenter
+.LeftIndent = leftW
+.FirstLineIndent = 0
+Else
+.Alignment = wdAlignParagraphLeft
+.LeftIndent = leftW + MillimetersToPoints(3)
+.FirstLineIndent = -MillimetersToPoints(3)
+End If
+End With
+If i = 1 Then p.Range.Font.Italic = TT_B("KINH_GUI_ITALIC")
+Next p
+Call TT_Note("Kinh gui co tu 2 don vi tro len: de 'Kinh gui:' mot dong rieng, moi don vi xuong mot dong (ND 30).")
+End Sub
 Private Function IsFooterBreakerLine(ByVal sRaw As String, ByVal sAsc As String) As Boolean
 IsFooterBreakerLine = False
 Dim t As String: t = Trim(sAsc)
@@ -2946,6 +3053,7 @@ IsDocNumberLineAsc(cAscKG) Then
 GoTo NextCellKG
 End If
 If HasKinhGuiOrTrinh(cAscKG) Then
+If tbl.Range.Cells.Count = 1 Then GoTo NextCellKG
 seenKinhGuiCell = True
 On Error Resume Next
 cKG.Borders.Enable = False
@@ -3062,6 +3170,7 @@ End If
 End If
 NextCellKG:
 Next cKG
+Call TT_KinhGuiNhieuDonVi(doc, tbl)
 End If
 Next tbl
 Call TT_DebugLog("BUOC 3.5 bat dau")
