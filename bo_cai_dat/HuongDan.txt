@@ -1,0 +1,53 @@
+================================================================================
+        ADD-IN CHUẨN HÓA THỂ THỨC VĂN BẢN CHO MICROSOFT WORD
+   Chính quyền (NĐ 30/2020/NĐ-CP) · Khối Đảng · Công an · Quân đội · MTTQ · VBQPPL
+   Người duy trì: Vương Đình Anh Tú
+   Dựa trên add-in gốc của Văn phòng Đảng ủy xã Thạnh Phú
+================================================================================
+
+1. CÀI ĐẶT (1 LẦN)
+- Giải nén tệp Bo_Cai_Dat_AddIn.zip (chuột phải > Extract All).
+- Lưu và đóng hết Word.
+- Nhấp đúp CaiDat.bat. Bộ cài tự gỡ bản add-in cũ (nếu có), cài bản mới và đặt
+  Khối = "Tự động nhận diện". Thông tin đơn vị đã nhập trước đây được giữ nguyên.
+- Mở Word: tab Home có nhóm THỂ THỨC VĂN BẢN, nút [Chuẩn Hóa Thể Thức].
+- Windows báo "đã chặn": chuột phải file .zip > Properties > tích Unblock > OK,
+  giải nén lại rồi chạy CaiDat.bat.
+- Gỡ: chạy GoCaiDat.bat.
+
+2. CẬP NHẬT
+- Add-in tự kiểm tra bản mới mỗi ngày một lần (khi có mạng) và hỏi trước khi cài.
+  Có thể bấm nút [Cập nhật] trên Ribbon bất cứ lúc nào.
+- Có bản mới: bấm Yes, ĐÓNG HẾT Word, mở lại là dùng bản mới.
+- File tải về được kiểm tra mã SHA-256; không khớp thì không cài.
+
+3. DÙNG HẰNG NGÀY
+- Mở văn bản > bấm [Chuẩn Hóa Thể Thức] > đọc bảng báo cáo.
+- Không ưng ý: bấm Ctrl+Z MỘT LẦN là trả lại nguyên trạng.
+- Bấm chuẩn hóa nhiều lần không bị nhân đôi đường kẻ.
+- Để Khối = "Tự động nhận diện". Văn bản có "ĐẢNG CỘNG SẢN VIỆT NAM" luôn được
+  xử lý theo khối Đảng, văn bản có Quốc hiệu theo khối Nhà nước.
+- Thông tin đơn vị (nút [Đơn vị]) và [Tạo văn bản mẫu]: như bản gốc.
+
+4. ADD-IN TỰ LÀM GÌ
+- Lề, phông, cỡ chữ, Quốc hiệu - Tiêu ngữ / tiêu ngữ Đảng, tên cơ quan, số ký hiệu,
+  ngày tháng, tên loại, trích yếu (có đường kẻ dưới), Kính gửi, Nơi nhận, chữ ký.
+- Quyết định: dòng thẩm quyền ban hành in hoa đậm canh giữa; căn cứ in nghiêng;
+  "Điều n." in đậm.
+- Phần/Chương/Mục: chữ thường đậm canh giữa, tên chương/mục in hoa đậm canh giữa.
+- Văn bản quy phạm pháp luật (số dạng 15/2026/QĐ-UBND): tiêu đề Điều đậm cả dòng,
+  khoản/điểm không đậm; cảnh báo năm trong số ký hiệu khác năm ban hành.
+- Chữ ký không đứng một mình ở trang mới, khối chữ ký không bị cắt đôi.
+- Trang cuối chỉ dư vài dòng: thu gọn trong khung NĐ 30 (khoảng cách đoạn 6pt,
+  rồi cỡ chữ 14 -> 13); không gọn được thì trả nguyên và báo.
+- Sửa lỗi dấu cách khi dán từ Zalo/web: "a ,b" -> "a, b"; "( x )" -> "(x)"; "a ." -> "a.".
+- Bảng số liệu: lặp dòng tiêu đề khi sang trang, không cắt ngang dòng bảng.
+- "CỘNG HOÀ" -> "CỘNG HÒA"; "UỶ BAN" (tên cơ quan) -> "ỦY BAN".
+- Mọi việc tự động được liệt kê ở mục "Da tu dong xu ly" trong bảng báo cáo.
+
+5. GIỚI HẠN
+- Không cấp số, ngày ban hành; không kiểm tra hiệu lực căn cứ pháp lý, nội dung.
+- Người ký chịu trách nhiệm về văn bản; luôn đọc lại trước khi trình ký.
+
+Góp ý, báo lỗi: tạo Issue tại https://github.com/anhtu604/addin-the-thuc-van-ban/issues
+================================================================================
